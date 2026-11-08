@@ -18,7 +18,7 @@ public class DataInitializer {
                 u.setNombres("Administrador");
                 u.setApellidos("Principal");
                 u.setCorreo("admin@iglesia.com");
-                u.setPassword(encoder.encode("admin123"));
+                u.setPassword(encoder.encode(System.getenv().getOrDefault("ADMIN_PASSWORD", "admin123")));
                 u.setRol(Usuario.Rol.ADMINISTRADOR);
                 repo.save(u);
             }
