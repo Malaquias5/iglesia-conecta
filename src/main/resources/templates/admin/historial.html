@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><th:block th:replace="~{fragments/layout :: cabeceraAdmin('Historial')}"></th:block></head>
+<body>
+<header th:replace="~{fragments/layout :: menuAdmin}"></header>
+<main class="container py-4">
+    <h1 class="h3 mb-3">Historial de notificaciones</h1>
+
+    <form th:action="@{/admin/historial/ejecutar}" method="post" class="mb-3">
+        <button class="btn btn-warning btn-sm">Revisar cumpleaños ahora (prueba)</button>
+    </form>
+
+    <p th:if="${#lists.isEmpty(alertas)}" class="text-muted">Aún no hay notificaciones.</p>
+    <div class="card shadow-sm" th:unless="${#lists.isEmpty(alertas)}">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Hermano</th><th>Cumpleaños</th><th>Enviado</th><th>Estado</th><th>Error</th></tr></thead>
+            <tbody>
+            <tr th:each="a : ${alertas}">
+                <td th:text="${nombres[a.hermanoId]}"></td>
+                <td th:text="${#temporals.format(a.fechaCumpleanos, 'dd/MM/yyyy')}"></td>
+                <td th:text="${#temporals.format(a.fechaEnvio, 'dd/MM/yyyy HH:mm')}"></td>
+                <td><span class="badge" th:classappend="${a.estadoEnvio == 'ENVIADO'} ? 'text-bg-success' : 'text-bg-danger'" th:text="${a.estadoEnvio}"></span></td>
+                <td th:text="${a.mensajeError}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

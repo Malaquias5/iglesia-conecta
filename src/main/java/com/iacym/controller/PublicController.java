@@ -23,4 +23,8 @@ public class PublicController {
         model.addAttribute("eventos", eventoService.listarPublicos());
         return "public/inicio";
     }
+    @GetMapping("/login")
+    public String login() {
+        return "auth/login";
+    }
 }

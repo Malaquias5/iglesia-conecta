@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: cabecera('Ingresar')}"></head>
+<body class="login-pagina">
+<main class="login-tarjeta">
+    <section class="login-lado">
+        <img th:src="@{/img/logo-iacym-independencia.png}" alt="Logo IACYM" class="login-logo"
+             onerror="this.style.display='none'">
+        <h1>Iglesia Alianza Cristiana y Misionera</h1>
+        <p>Panel de administración</p>
+    </section>
+
+    <section class="login-form">
+        <h2>Ingresar</h2>
+        <div class="alerta" th:if="${param.error}">Correo o clave incorrectos.</div>
+        <div class="info" th:if="${param.logout}">Cerraste sesión.</div>
+        <form th:action="@{/login}" method="post">
+            <label class="form-label" for="username">Correo</label>
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input class="form-control" id="username" name="username" type="email" required autofocus>
+            </div>
+            <label class="form-label" for="password">Clave</label>
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input class="form-control" id="password" name="password" type="password" required>
+                <button class="btn btn-outline-secondary" type="button" id="verClave" aria-label="Mostrar clave">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+            <button class="boton boton-bloque">Ingresar</button>
+        </form>
+        <p class="mt-3 mb-0 text-center"><a th:href="@{/}" class="vacio">← Volver al sitio</a></p>
+    </section>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var campo = document.getElementById('password');
+    document.getElementById('verClave').addEventListener('click', function () {
+        campo.type = campo.type === 'password' ? 'text' : 'password';
+    });
+});
+</script>
+</body>
+</html>

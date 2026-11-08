@@ -25,8 +25,12 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasAnyRole("ADMINISTRADOR", "LIDER")
                 .anyRequest().permitAll()
             )
-            .formLogin(Customizer.withDefaults())
-            .logout(Customizer.withDefaults());
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/admin", true)
+                .permitAll()
+            )
+            .logout(logout -> logout.logoutSuccessUrl("/login?logout"));
         return http.build();
     }
-}
+    }
