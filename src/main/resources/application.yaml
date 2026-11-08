@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: iacym
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/iacym_db
+    username: postgres
+    password: admin
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  mvc:
+    format:
+      time: HH:mm
+
+server:
+  port: 8080
