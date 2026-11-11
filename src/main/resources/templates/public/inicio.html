@@ -2,6 +2,64 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: cabecera('Inicio')}"></head>
 <body>
+<span class="d-none dato-reunion" th:each="r : ${reuniones}"
+      th:attr="data-dia=${r.diaSemana.value},data-hora=${#temporals.format(r.horaInicio,'HH:mm')},data-nombre=${r.nombre}"></span>
+
+<div class="aviso" id="aviso">
+    <div class="container aviso-in">
+        <i class="bi bi-calendar-heart aviso-icono"></i>
+        <div class="aviso-texto">
+            <strong>Próxima reunión: <span id="avisoNombre">...</span></strong>
+            <small>Te esperamos, ven tal como eres.</small>
+        </div>
+        <div class="cuenta">
+            <div class="cuenta-caja"><b id="cDias">00</b><small>DÍAS</small></div>
+            <div class="cuenta-caja"><b id="cHoras">00</b><small>HRS</small></div>
+            <div class="cuenta-caja"><b id="cMin">00</b><small>MIN</small></div>
+            <div class="cuenta-caja"><b id="cSeg">00</b><small>SEG</small></div>
+        </div>
+        <a class="aviso-boton" th:href="@{/#horario}">VER HORARIOS</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var datos = Array.prototype.map.call(document.querySelectorAll('.dato-reunion'), function (e) {
+        var p = e.dataset.hora.split(':');
+        return { dia: parseInt(e.dataset.dia, 10) % 7, h: parseInt(p[0], 10), m: parseInt(p[1], 10), nombre: e.dataset.nombre };
+    });
+    if (!datos.length) { document.getElementById('aviso').style.display = 'none'; return; }
+
+    function ahoraLima() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' })); }
+    function proxima(ahora) {
+        var mejor = null;
+        datos.forEach(function (d) {
+            for (var o = 0; o <= 7; o++) {
+                var c = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + o, d.h, d.m, 0);
+                if (c.getDay() === d.dia && c > ahora) {
+                    if (!mejor || c < mejor.fecha) mejor = { fecha: c, nombre: d.nombre };
+                    break;
+                }
+            }
+        });
+        return mejor;
+    }
+    function dos(n) { return (n < 10 ? '0' : '') + n; }
+    function pintar() {
+        var ahora = ahoraLima();
+        var p = proxima(ahora);
+        if (!p) return;
+        var t = Math.floor((p.fecha - ahora) / 1000);
+        document.getElementById('avisoNombre').textContent = p.nombre;
+        document.getElementById('cDias').textContent = dos(Math.floor(t / 86400));
+        document.getElementById('cHoras').textContent = dos(Math.floor(t % 86400 / 3600));
+        document.getElementById('cMin').textContent = dos(Math.floor(t % 3600 / 60));
+        document.getElementById('cSeg').textContent = dos(t % 60);
+    }
+    pintar();
+    setInterval(pintar, 1000);
+});
+</script>
 <header th:replace="~{fragments/layout :: menu}"></header>
 
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,700&display=swap" rel="stylesheet">
@@ -57,12 +115,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 </div>
                 <div class="panel-domingos">
-                    <strong>Domingos</strong>
-                    <div class="panel-horas">
-                        <span th:each="r : ${reuniones}" th:if="${r.diaSemana.name() == 'SUNDAY'}"
-                              th:text="${#temporals.format(r.horaInicio, 'HH:mm')}">08:00</span>
-                    </div>
-                </div>
+            <strong>Domingos</strong>
+            <div class="panel-horas">
+              <span class="hora-chip" th:each="r : ${reuniones}"
+               th:if="${r.diaSemana.name() == 'SUNDAY' and r.horaInicio.hour < 15}"
+              th:text="${#temporals.format(r.horaInicio, 'HH:mm')}">08:00</span>
+                   </div>
+                          </div>
             </div>
         </div>
     </div>
@@ -78,54 +137,62 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
 
         <div class="consuelo-pista" id="consueloPista">
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-cloud-rain"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando estoy triste</h3>
-                <p class="vc-texto">“Cercano está Jehová a los quebrantados de corazón; y salva a los contritos de espíritu.”</p>
-                <span class="vc-ref">Salmo 34:18</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-heart-pulse"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando estoy enfermo</h3>
-                <p class="vc-texto">“Mas yo haré venir sanidad para ti, y sanaré tus heridas, dice Jehová.”</p>
-                <span class="vc-ref">Jeremías 30:17</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-shield-check"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando tengo miedo</h3>
-                <p class="vc-texto">“No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo.”</p>
-                <span class="vc-ref">Isaías 41:10</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-moon-stars"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando siento ansiedad</h3>
-                <p class="vc-texto">“Echando toda vuestra ansiedad sobre él, porque él tiene cuidado de vosotros.”</p>
-                <span class="vc-ref">1 Pedro 5:7</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-lightning-charge"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando necesito fuerzas</h3>
-                <p class="vc-texto">“Los que esperan a Jehová tendrán nuevas fuerzas; levantarán alas como las águilas.”</p>
-                <span class="vc-ref">Isaías 40:31</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-sunrise"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando busco paz</h3>
-                <p class="vc-texto">“La paz os dejo, mi paz os doy; no se turbe vuestro corazón, ni tenga miedo.”</p>
-                <span class="vc-ref">Juan 14:27</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-signpost-split"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando necesito guía</h3>
-                <p class="vc-texto">“Fíate de Jehová de todo tu corazón, y él enderezará tus veredas.”</p>
-                <span class="vc-ref">Proverbios 3:5-6</span>
-            </article>
-            <article class="verso-card">
-                <div class="vc-icono"><i class="bi bi-people"></i><span class="vc-badge"><i class="bi bi-book"></i></span></div>
-                <h3 class="vc-titulo">Cuando me siento solo</h3>
-                <p class="vc-texto">“He aquí yo estoy con vosotros todos los días, hasta el fin del mundo.”</p>
-                <span class="vc-ref">Mateo 28:20</span>
-            </article>
+            <button type="button" class="pc" data-titulo="Cuando estoy triste" data-ref="Salmo 34:18"
+                    data-texto="Cercano está Jehová a los quebrantados de corazón; y salva a los contritos de espíritu.">
+                <span class="pc-icono"><i class="bi bi-cloud-rain-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Estoy triste</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando estoy enfermo" data-ref="Jeremías 30:17"
+                    data-texto="Mas yo haré venir sanidad para ti, y sanaré tus heridas, dice Jehová.">
+                <span class="pc-icono"><i class="bi bi-heart-pulse-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Estoy enfermo</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando tengo miedo" data-ref="Isaías 41:10"
+                    data-texto="No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo.">
+                <span class="pc-icono"><i class="bi bi-shield-fill-check"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Tengo miedo</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando siento ansiedad" data-ref="1 Pedro 5:7"
+                    data-texto="Echando toda vuestra ansiedad sobre él, porque él tiene cuidado de vosotros.">
+                <span class="pc-icono"><i class="bi bi-moon-stars-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Siento ansiedad</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando necesito fuerzas" data-ref="Isaías 40:31"
+                    data-texto="Los que esperan a Jehová tendrán nuevas fuerzas; levantarán alas como las águilas.">
+                <span class="pc-icono"><i class="bi bi-lightning-charge-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Necesito fuerzas</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando busco paz" data-ref="Juan 14:27"
+                    data-texto="La paz os dejo, mi paz os doy; no se turbe vuestro corazón, ni tenga miedo.">
+                <span class="pc-icono"><i class="bi bi-sunrise-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Busco paz</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando necesito guía" data-ref="Proverbios 3:5-6"
+                    data-texto="Fíate de Jehová de todo tu corazón, y no te apoyes en tu propia prudencia. Reconócelo en todos tus caminos, y él enderezará tus veredas.">
+                <span class="pc-icono"><i class="bi bi-signpost-split-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Necesito guía</span>
+            </button>
+            <button type="button" class="pc" data-titulo="Cuando me siento solo" data-ref="Mateo 28:20"
+                    data-texto="He aquí yo estoy con vosotros todos los días, hasta el fin del mundo.">
+                <span class="pc-icono"><i class="bi bi-people-fill"></i><span class="pc-badge"><i class="bi bi-book-fill"></i></span></span>
+                <span class="pc-titulo">Me siento solo</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="modal fade" id="palabraModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content palabra-modal">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <i class="bi bi-book-fill pm-icono"></i>
+                <h3 class="pm-tit" id="pmTitulo"></h3>
+                <p class="pm-texto" id="pmTexto"></p>
+                <span class="pm-linea"></span>
+                <span class="pm-ref" id="pmRef"></span>
+                <div class="pm-acciones">
+                    <a class="aviso-boton" id="pmCompartir" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Compartir</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -150,19 +217,58 @@ document.addEventListener('DOMContentLoaded', function () {
     pista.addEventListener('scroll', actualizar);
     window.addEventListener('resize', actualizar);
     actualizar();
+
+    var modal = new bootstrap.Modal(document.getElementById('palabraModal'));
+    document.querySelectorAll('.pc').forEach(function (tarjeta) {
+        tarjeta.addEventListener('click', function () {
+            var texto = '“' + tarjeta.dataset.texto + '”';
+            document.getElementById('pmTitulo').textContent = tarjeta.dataset.titulo;
+            document.getElementById('pmTexto').textContent = texto;
+            document.getElementById('pmRef').textContent = tarjeta.dataset.ref;
+            document.getElementById('pmCompartir').href =
+                'https://wa.me/?text=' + encodeURIComponent(texto + ' ' + tarjeta.dataset.ref);
+            modal.show();
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var pista = document.getElementById('consueloPista');
+    var contador = document.getElementById('consueloContador');
+    function paginas() { return Math.max(1, Math.ceil(pista.scrollWidth / pista.clientWidth - 0.05)); }
+    function actualizar() {
+        var total = paginas();
+        var actual = Math.min(total, Math.round(pista.scrollLeft / pista.clientWidth) + 1);
+        if (pista.scrollLeft + pista.clientWidth >= pista.scrollWidth - 4) actual = total;
+        contador.textContent = actual + ' de ' + total;
+    }
+    document.getElementById('consueloPrev').addEventListener('click', function () {
+        pista.scrollBy({ left: -pista.clientWidth, behavior: 'smooth' });
+    });
+    document.getElementById('consueloNext').addEventListener('click', function () {
+        pista.scrollBy({ left: pista.clientWidth, behavior: 'smooth' });
+    });
+    pista.addEventListener('scroll', actualizar);
+    window.addEventListener('resize', actualizar);
+    actualizar();
 })
 
 
 </script>
-<aside class="verso-flotante" id="versoFlotante" aria-label="Versículo del día">
-    <button type="button" class="verso-cerrar" id="versoCerrar" aria-label="Minimizar">&times;</button>
-    <i class="bi bi-book verso-icono"></i>
-    <h2 class="verso-titulo">Una palabra para tu día</h2>
-    <p class="verso-texto" id="versoTexto"></p>
-    <span class="verso-ref" id="versoRef"></span>
-    <a class="verso-boton" href="#horario">Ver horarios <i class="bi bi-arrow-right"></i></a>
+<aside class="vf" id="vf" aria-label="Versículo del día">
+    <button type="button" class="vf-cerrar" id="vfCerrar" aria-label="Minimizar"><i class="bi bi-x-lg"></i></button>
+    <span class="vf-etiqueta"><i class="bi bi-brightness-high-fill"></i> Versículo del día</span>
+    <i class="bi bi-book-half vf-icono"></i>
+    <p class="vf-texto" id="vfTexto"></p>
+    <span class="vf-linea"></span>
+    <span class="vf-ref" id="vfRef"></span>
+    <div class="vf-botones">
+        <a class="vf-boton vf-boton-dorado" th:href="@{/#horario}">Ver horarios <i class="bi bi-arrow-right"></i></a>
+        <a class="vf-boton vf-boton-borde" id="vfCompartir" target="_blank" rel="noopener" aria-label="Compartir por WhatsApp"><i class="bi bi-whatsapp"></i></a>
+    </div>
 </aside>
-<button type="button" class="verso-mini" id="versoMini" aria-label="Abrir versículo del día"><i class="bi bi-book"></i></button>
+<button type="button" class="vf-mini" id="vfMini" aria-label="Abrir versículo del día"><i class="bi bi-book-half"></i></button>
 
 <script>
 (function () {
@@ -174,24 +280,30 @@ document.addEventListener('DOMContentLoaded', function () {
         { t: "Esfuérzate y sé valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo.", r: "Josué 1:9" }
     ];
     var v = versos[Math.floor(Date.now() / 86400000) % versos.length];
-    document.getElementById('versoTexto').textContent = '“' + v.t + '”';
-    document.getElementById('versoRef').textContent = v.r;
+    var texto = '“' + v.t + '”';
+    document.getElementById('vfTexto').textContent = texto;
+    document.getElementById('vfRef').textContent = v.r;
+    document.getElementById('vfCompartir').href = 'https://wa.me/?text=' + encodeURIComponent(texto + ' ' + v.r);
 
-    var caja = document.getElementById('versoFlotante');
-    var mini = document.getElementById('versoMini');
+    var caja = document.getElementById('vf');
+    var mini = document.getElementById('vfMini');
     function ocultar() {
-        caja.classList.add('oculto');
+        caja.classList.remove('visible');
         mini.classList.add('visible');
-        try { sessionStorage.setItem('versoOculto', '1'); } catch (e) {}
+        try { sessionStorage.setItem('vfOculto', '1'); } catch (e) {}
     }
     function mostrar() {
-        caja.classList.remove('oculto');
+        caja.classList.add('visible');
         mini.classList.remove('visible');
-        try { sessionStorage.removeItem('versoOculto'); } catch (e) {}
+        try { sessionStorage.removeItem('vfOculto'); } catch (e) {}
     }
-    document.getElementById('versoCerrar').addEventListener('click', ocultar);
+    document.getElementById('vfCerrar').addEventListener('click', ocultar);
     mini.addEventListener('click', mostrar);
-    try { if (sessionStorage.getItem('versoOculto')) ocultar(); } catch (e) {}
+
+    var oculto = false;
+    try { oculto = !!sessionStorage.getItem('vfOculto'); } catch (e) {}
+    if (oculto || window.innerWidth <= 700) { mini.classList.add('visible'); }
+    else { setTimeout(mostrar, 1500); }
 })();
 </script>
 
@@ -285,39 +397,58 @@ document.addEventListener('DOMContentLoaded', function () {
         <h2 class="mensaje-titulo">Cristo viene pronto. Prepárate con nosotros</h2>
         <p class="mensaje-verso">“Ciertamente vengo en breve.” <strong>Apocalipsis 22:20</strong></p>
 
-        <div class="bloques">
-            <a class="bloque bloque-noche" th:href="@{/#contacto}">
-                <h3>Una esperanza para ti</h3>
-                <p>Jesucristo vuelve. Conoce el mensaje que cambió nuestras vidas y compártelo con tu familia.</p>
-                <span class="bloque-icono"><i class="bi bi-stars"></i><span class="vc-badge"><i class="bi bi-arrow-right"></i></span></span>
+        <div class="bq-grid">
+            <a class="bq bq-noche" th:href="@{/#contacto}">
+                <div class="bq-cuerpo">
+                    <h3>Una esperanza para ti</h3>
+                    <p>Jesucristo vuelve. Conoce el mensaje que cambió nuestras vidas y compártelo con tu familia.</p>
+                </div>
+                <span class="bq-icono"><i class="bi bi-stars"></i></span>
+                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="bloque bloque-indigo" th:href="@{/#contacto}">
-                <h3>Cuéntanos cómo ayudarte</h3>
-                <p>Comparte tu necesidad o petición de oración. Estamos para escucharte y orar contigo.</p>
-                <span class="bloque-icono"><i class="bi bi-chat-heart-fill"></i><span class="vc-badge"><i class="bi bi-arrow-right"></i></span></span>
+
+            <a class="bq bq-indigo" th:href="@{/#contacto}">
+                <div class="bq-cuerpo">
+                    <h3>Cuéntanos cómo ayudarte</h3>
+                    <p>Comparte tu necesidad o petición de oración. Estamos para escucharte y orar contigo.</p>
+                </div>
+                <span class="bq-icono"><i class="bi bi-chat-heart-fill"></i></span>
+                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="bloque bloque-lila" th:href="@{/#horario}">
-                <h3>¿Es tu primera vez?</h3>
-                <p>Te recibimos con los brazos abiertos. Mira los horarios y ven este domingo.</p>
-                <span class="bloque-icono"><i class="bi bi-door-open"></i><span class="vc-badge"><i class="bi bi-arrow-right"></i></span></span>
+
+            <a class="bq bq-dorado" th:href="@{/#horario}">
+                <div class="bq-cuerpo">
+                    <h3>¿Es tu primera vez?</h3>
+                    <p>Te recibimos con los brazos abiertos. Mira los horarios y ven este domingo.</p>
+                </div>
+                <span class="bq-icono"><i class="bi bi-door-open-fill"></i></span>
+                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="bloque bloque-blanco" th:href="@{/#palabra}">
-                <h3>Recibe la Palabra</h3>
-                <p>Versículos para cada momento, para que los leas y los compartas con quien lo necesite.</p>
-                <span class="bloque-icono"><i class="bi bi-book"></i><span class="vc-badge"><i class="bi bi-arrow-right"></i></span></span>
+
+            <a class="bq bq-biblia" th:href="@{/#palabra}">
+                <div class="bq-cuerpo">
+                    <h3>Recibe la Palabra</h3>
+                    <p class="bq-verso">“Lámpara es a mis pies tu palabra, y lumbrera a mi camino.”</p>
+                    <span class="bq-ref">Salmo 119:105</span>
+                </div>
+                <span class="bq-icono"><i class="bi bi-book-half"></i></span>
+                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
         </div>
 
         <h3 class="cerca-titulo">Estamos cerca, cuando lo necesites</h3>
-        <div class="cerca">
-            <a class="cerca-item" th:href="@{/#contacto}">
-                <span class="cerca-icono"><i class="bi bi-heart"></i></span>Petición de oración
+        <div class="cr-grid">
+            <a class="cr" th:href="@{/#contacto}">
+                <span class="cr-icono"><i class="bi bi-heart-fill"></i></span>
+                <span class="cr-titulo">Petición de oración</span>
             </a>
-            <a class="cerca-item" th:href="@{/#contacto}">
-                <span class="cerca-icono"><i class="bi bi-geo-alt"></i></span>Visítanos
+            <a class="cr" th:href="@{/#contacto}">
+                <span class="cr-icono"><i class="bi bi-geo-alt-fill"></i></span>
+                <span class="cr-titulo">Visítanos</span>
             </a>
-            <a class="cerca-item" th:href="@{/#redes}">
-                <span class="cerca-icono"><i class="bi bi-share"></i></span>Redes sociales
+            <a class="cr" th:href="@{/#redes}">
+                <span class="cr-icono"><i class="bi bi-share-fill"></i></span>
+                <span class="cr-titulo">Redes sociales</span>
             </a>
         </div>
     </div>
@@ -404,36 +535,52 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </div>
 </section>
-<section class="seccion seccion-alt" id="redes">
+<section class="redes" id="redes">
     <div class="container">
-        <div class="titulo-centro">
+        <div class="redes-cabecera">
             <h2>Síguenos en redes</h2>
-            <p class="vacio">Entérate de nuestras actividades y comparte con nosotros.</p>
+            <p>Entérate de nuestras actividades y comparte con nosotros.</p>
         </div>
-        <div class="redes-grid">
-            <article class="red-card">
-                <h3>Iglesia Independencia</h3>
-                <p>Cultos, eventos y avisos de toda la congregación.</p>
-                <div class="red-botones">
-                    <a class="red-btn" href="https://www.facebook.com/share/19Ys78ACeR/" target="_blank" rel="noopener">
-                        <i class="bi bi-facebook"></i> Facebook
-                    </a>
-                    <a class="red-btn" href="https://www.instagram.com/iacym.independencia" target="_blank" rel="noopener">
-                        <i class="bi bi-instagram"></i> Instagram
-                    </a>
+
+        <div class="redes-duo">
+            <article class="red-panel">
+                <div class="red-panel-top">
+                    <span class="red-panel-icono"><i class="bi bi-house-heart-fill"></i></span>
+                    <div>
+                        <h3>Iglesia Independencia</h3>
+                        <p>Cultos, eventos y avisos de toda la congregación.</p>
+                    </div>
                 </div>
+                <a class="red-enlace" href="https://www.facebook.com/share/19Ys78ACeR/" target="_blank" rel="noopener">
+                    <span class="red-logo red-logo-fb"><i class="bi bi-facebook"></i></span>
+                    <span class="red-datos"><strong>Facebook</strong><small>Visitar la página</small></span>
+                    <i class="bi bi-arrow-right red-flecha"></i>
+                </a>
+                <a class="red-enlace" href="https://www.instagram.com/iacym.independencia" target="_blank" rel="noopener">
+                    <span class="red-logo red-logo-ig"><i class="bi bi-instagram"></i></span>
+                    <span class="red-datos"><strong>Instagram</strong><small>@iacym.independencia</small></span>
+                    <i class="bi bi-arrow-right red-flecha"></i>
+                </a>
             </article>
-            <article class="red-card">
-                <h3>Red Juvenil</h3>
-                <p>Reuniones, actividades y novedades de los jóvenes.</p>
-                <div class="red-botones">
-                    <a class="red-btn" href="https://www.facebook.com/share/1HrBSa55dZ/" target="_blank" rel="noopener">
-                        <i class="bi bi-facebook"></i> Facebook
-                    </a>
-                    <a class="red-btn" href="https://www.instagram.com/redjuvenil.independencia" target="_blank" rel="noopener">
-                        <i class="bi bi-instagram"></i> Instagram
-                    </a>
+
+            <article class="red-panel">
+                <div class="red-panel-top">
+                    <span class="red-panel-icono"><i class="bi bi-lightning-charge-fill"></i></span>
+                    <div>
+                        <h3>Red Juvenil</h3>
+                        <p>Reuniones, actividades y novedades de los jóvenes.</p>
+                    </div>
                 </div>
+                <a class="red-enlace" href="https://www.facebook.com/share/1HrBSa55dZ/" target="_blank" rel="noopener">
+                    <span class="red-logo red-logo-fb"><i class="bi bi-facebook"></i></span>
+                    <span class="red-datos"><strong>Facebook</strong><small>Visitar la página</small></span>
+                    <i class="bi bi-arrow-right red-flecha"></i>
+                </a>
+                <a class="red-enlace" href="https://www.instagram.com/redjuvenil.independencia" target="_blank" rel="noopener">
+                    <span class="red-logo red-logo-ig"><i class="bi bi-instagram"></i></span>
+                    <span class="red-datos"><strong>Instagram</strong><small>@redjuvenil.independencia</small></span>
+                    <i class="bi bi-arrow-right red-flecha"></i>
+                </a>
             </article>
         </div>
     </div>
