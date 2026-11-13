@@ -3,58 +3,113 @@
 <head th:replace="~{fragments/layout :: cabecera('Inicio')}"></head>
 <body>
 <span class="d-none dato-reunion" th:each="r : ${reuniones}"
-      th:attr="data-dia=${r.diaSemana.value},data-hora=${#temporals.format(r.horaInicio,'HH:mm')},data-nombre=${r.nombre}"></span>
+      th:attr="data-dia=${r.diaSemana.value},data-hora=${#temporals.format(r.horaInicio,'HH:mm')},data-fin=${r.horaFin != null ? #temporals.format(r.horaFin,'HH:mm') : ''},data-nombre=${r.nombre}"></span>
 
 <div class="aviso" id="aviso">
     <div class="container aviso-in">
-        <i class="bi bi-calendar-heart aviso-icono"></i>
+        <span class="aviso-badge"><i class="bi bi-bell-fill"></i></span>
         <div class="aviso-texto">
-            <strong>Próxima reunión: <span id="avisoNombre">...</span></strong>
-            <small>Te esperamos, ven tal como eres.</small>
+            <strong id="avisoTitulo">Próxima reunión</strong>
+            <small id="avisoSub">Te esperamos, ven tal como eres.</small>
         </div>
-        <div class="cuenta">
+        <div class="cuenta" id="cuenta">
             <div class="cuenta-caja"><b id="cDias">00</b><small>DÍAS</small></div>
             <div class="cuenta-caja"><b id="cHoras">00</b><small>HRS</small></div>
             <div class="cuenta-caja"><b id="cMin">00</b><small>MIN</small></div>
             <div class="cuenta-caja"><b id="cSeg">00</b><small>SEG</small></div>
         </div>
-        <a class="aviso-boton" th:href="@{/#horario}">VER HORARIOS</a>
+        <a class="aviso-boton" id="avisoBoton" th:href="@{/#horario}">VER HORARIOS</a>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var DURACION_MIN = 120;
+    var MAPS = 'https://www.google.com/maps/search/?api=1&query=Av.+Las+Guindas+102+Independencia+Lima';
+    var aviso = document.getElementById('aviso');
+    var boton = document.getElementById('avisoBoton');
+    var hrefHorario = boton.getAttribute('href');
+
     var datos = Array.prototype.map.call(document.querySelectorAll('.dato-reunion'), function (e) {
         var p = e.dataset.hora.split(':');
-        return { dia: parseInt(e.dataset.dia, 10) % 7, h: parseInt(p[0], 10), m: parseInt(p[1], 10), nombre: e.dataset.nombre };
+        var f = e.dataset.fin ? e.dataset.fin.split(':') : null;
+        return {
+            dia: parseInt(e.dataset.dia, 10) % 7,
+            h: parseInt(p[0], 10), m: parseInt(p[1], 10),
+            fh: f ? parseInt(f[0], 10) : null, fm: f ? parseInt(f[1], 10) : null,
+            nombre: e.dataset.nombre
+        };
     });
-    if (!datos.length) { document.getElementById('aviso').style.display = 'none'; return; }
+    if (!datos.length) { aviso.style.display = 'none'; return; }
 
     function ahoraLima() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' })); }
+    function dos(n) { return (n < 10 ? '0' : '') + n; }
+    function hora(d) { return dos(d.h) + ':' + dos(d.m); }
+
+    function enCurso(ahora) {
+        for (var i = 0; i < datos.length; i++) {
+            var d = datos[i];
+            if (ahora.getDay() !== d.dia) continue;
+            var ini = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), d.h, d.m, 0);
+            var fin = d.fh !== null
+                ? new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), d.fh, d.fm, 0)
+                : new Date(ini.getTime() + DURACION_MIN * 60000);
+            if (ahora >= ini && ahora < fin) return d;
+        }
+        return null;
+    }
     function proxima(ahora) {
         var mejor = null;
         datos.forEach(function (d) {
             for (var o = 0; o <= 7; o++) {
                 var c = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + o, d.h, d.m, 0);
                 if (c.getDay() === d.dia && c > ahora) {
-                    if (!mejor || c < mejor.fecha) mejor = { fecha: c, nombre: d.nombre };
+                    if (!mejor || c < mejor.fecha) mejor = { fecha: c, d: d, o: o };
                     break;
                 }
             }
         });
         return mejor;
     }
-    function dos(n) { return (n < 10 ? '0' : '') + n; }
+    function ponerBoton(vivo) {
+        if (vivo) { boton.textContent = 'CÓMO LLEGAR'; boton.href = MAPS; boton.target = '_blank'; boton.rel = 'noopener'; }
+        else { boton.textContent = 'VER HORARIOS'; boton.href = hrefHorario; boton.removeAttribute('target'); }
+    }
     function pintar() {
         var ahora = ahoraLima();
+        var titulo = document.getElementById('avisoTitulo');
+        var sub = document.getElementById('avisoSub');
+        var cuenta = document.getElementById('cuenta');
+
+        var vivo = enCurso(ahora);
+        if (vivo) {
+            aviso.classList.add('aviso-vivo');
+            cuenta.style.display = 'none';
+            titulo.textContent = 'En este momento: ' + vivo.nombre;
+            sub.textContent = '¡Aún estás a tiempo, te esperamos!';
+            ponerBoton(true);
+            return;
+        }
+        aviso.classList.remove('aviso-vivo');
+        cuenta.style.display = '';
+        ponerBoton(false);
+
         var p = proxima(ahora);
         if (!p) return;
         var t = Math.floor((p.fecha - ahora) / 1000);
-        document.getElementById('avisoNombre').textContent = p.nombre;
         document.getElementById('cDias').textContent = dos(Math.floor(t / 86400));
         document.getElementById('cHoras').textContent = dos(Math.floor(t % 86400 / 3600));
         document.getElementById('cMin').textContent = dos(Math.floor(t % 3600 / 60));
         document.getElementById('cSeg').textContent = dos(t % 60);
+
+        if (p.fecha.toDateString() === ahora.toDateString()) {
+            titulo.textContent = 'Hoy: ' + p.d.nombre + ' a las ' + hora(p.d);
+            sub.textContent = '¡Hoy te esperamos!';
+        } else {
+            var dia = p.fecha.toLocaleDateString('es-PE', { weekday: 'long' });
+            titulo.textContent = 'Próxima reunión: ' + p.d.nombre;
+            sub.textContent = 'El ' + dia + ' a las ' + hora(p.d) + '. Ven tal como eres.';
+        }
     }
     pintar();
     setInterval(pintar, 1000);
@@ -397,62 +452,107 @@ document.addEventListener('DOMContentLoaded', function () {
         <h2 class="mensaje-titulo">Cristo viene pronto. Prepárate con nosotros</h2>
         <p class="mensaje-verso">“Ciertamente vengo en breve.” <strong>Apocalipsis 22:20</strong></p>
 
-        <div class="bq-grid">
-            <a class="bq bq-noche" th:href="@{/#contacto}">
-                <div class="bq-cuerpo">
+        <div class="foto-grid">
+            <a class="fc fc-1" href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20conocer%20m%C3%A1s%20del%20mensaje%20de%20esperanza." target="_blank" rel="noopener">
+                <span class="fc-foto" th:style="'background-image:url(' + @{/img/mensaje/esperanza.jpg} + ')'"></span>
+                <span class="fc-tag">Esperanza</span>
+                <div class="fc-cuerpo">
                     <h3>Una esperanza para ti</h3>
                     <p>Jesucristo vuelve. Conoce el mensaje que cambió nuestras vidas y compártelo con tu familia.</p>
+                    <span class="fc-cta">Conocer más <i class="bi bi-arrow-right"></i></span>
                 </div>
-                <span class="bq-icono"><i class="bi bi-stars"></i></span>
-                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
 
-            <a class="bq bq-indigo" th:href="@{/#contacto}">
-                <div class="bq-cuerpo">
+            <a class="fc fc-2" href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20contarles%20una%20necesidad%20o%20pedir%20oraci%C3%B3n." target="_blank" rel="noopener">
+                <span class="fc-foto" th:style="'background-image:url(' + @{/img/mensaje/ayuda.jpg} + ')'"></span>
+                <span class="fc-tag">Oración</span>
+                <div class="fc-cuerpo">
                     <h3>Cuéntanos cómo ayudarte</h3>
                     <p>Comparte tu necesidad o petición de oración. Estamos para escucharte y orar contigo.</p>
+                    <span class="fc-cta">Escribir ahora <i class="bi bi-arrow-right"></i></span>
                 </div>
-                <span class="bq-icono"><i class="bi bi-chat-heart-fill"></i></span>
-                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
 
-            <a class="bq bq-dorado" th:href="@{/#horario}">
-                <div class="bq-cuerpo">
+            <a class="fc fc-3" th:href="@{/#horario}">
+                <span class="fc-foto" th:style="'background-image:url(' + @{/img/mensaje/primera-vez.jpg} + ')'"></span>
+                <span class="fc-tag">Bienvenido</span>
+                <div class="fc-cuerpo">
                     <h3>¿Es tu primera vez?</h3>
                     <p>Te recibimos con los brazos abiertos. Mira los horarios y ven este domingo.</p>
+                    <span class="fc-cta">Ver horarios <i class="bi bi-arrow-right"></i></span>
                 </div>
-                <span class="bq-icono"><i class="bi bi-door-open-fill"></i></span>
-                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
 
-            <a class="bq bq-biblia" th:href="@{/#palabra}">
-                <div class="bq-cuerpo">
+            <a class="fc fc-4" th:href="@{/#palabra}">
+                <span class="fc-foto" th:style="'background-image:url(' + @{/img/mensaje/palabra.jpg} + ')'"></span>
+                <span class="fc-tag">La Palabra</span>
+                <div class="fc-cuerpo">
                     <h3>Recibe la Palabra</h3>
-                    <p class="bq-verso">“Lámpara es a mis pies tu palabra, y lumbrera a mi camino.”</p>
-                    <span class="bq-ref">Salmo 119:105</span>
+                    <p class="fc-verso">“Lámpara es a mis pies tu palabra, y lumbrera a mi camino.” <b>Salmo 119:105</b></p>
+                    <span class="fc-cta">Leer más <i class="bi bi-arrow-right"></i></span>
                 </div>
-                <span class="bq-icono"><i class="bi bi-book-half"></i></span>
-                <span class="bq-flecha"><i class="bi bi-arrow-right"></i></span>
             </a>
         </div>
 
         <h3 class="cerca-titulo">Estamos cerca, cuando lo necesites</h3>
-        <div class="cr-grid">
-            <a class="cr" th:href="@{/#contacto}">
-                <span class="cr-icono"><i class="bi bi-heart-fill"></i></span>
-                <span class="cr-titulo">Petición de oración</span>
+        <div class="cercano">
+            <a class="cer" href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20una%20petici%C3%B3n%20de%20oraci%C3%B3n." target="_blank" rel="noopener">
+                <span class="cer-ico cer-wsp"><i class="bi bi-whatsapp"></i></span>
+                <span class="cer-tx"><strong>Petición de oración</strong><small>Escríbenos por WhatsApp</small></span>
+                <i class="bi bi-arrow-right cer-flecha"></i>
             </a>
-            <a class="cr" th:href="@{/#contacto}">
-                <span class="cr-icono"><i class="bi bi-geo-alt-fill"></i></span>
-                <span class="cr-titulo">Visítanos</span>
+            <a class="cer" href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Las+Guindas+102+Independencia+Lima" target="_blank" rel="noopener">
+                <span class="cer-ico cer-mapa"><i class="bi bi-geo-alt-fill"></i></span>
+                <span class="cer-tx"><strong>Visítanos</strong><small>Av. Las Guindas 102, Independencia</small></span>
+                <i class="bi bi-arrow-right cer-flecha"></i>
             </a>
-            <a class="cr" th:href="@{/#redes}">
-                <span class="cr-icono"><i class="bi bi-share-fill"></i></span>
-                <span class="cr-titulo">Redes sociales</span>
+            <a class="cer" th:href="@{/#redes}">
+                <span class="cer-ico cer-redes"><i class="bi bi-share-fill"></i></span>
+                <span class="cer-tx"><strong>Síguenos</strong><small>Facebook e Instagram</small></span>
+                <i class="bi bi-arrow-right cer-flecha"></i>
             </a>
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var tarjetas = document.querySelectorAll('.fc');
+    var reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var conMouse = window.matchMedia('(hover: hover)').matches;
+
+    if (conMouse && !reducir) {
+        tarjetas.forEach(function (c) {
+            c.addEventListener('mousemove', function (e) {
+                var r = c.getBoundingClientRect();
+                var x = (e.clientX - r.left) / r.width - 0.5;
+                var y = (e.clientY - r.top) / r.height - 0.5;
+                c.style.transform = 'perspective(900px) rotateY(' + (x * 7) + 'deg) rotateX(' + (-y * 7) + 'deg) translateY(-4px)';
+                c.style.setProperty('--mx', ((x + 0.5) * 100) + '%');
+                c.style.setProperty('--my', ((y + 0.5) * 100) + '%');
+            });
+            c.addEventListener('mouseleave', function () { c.style.transform = ''; });
+        });
+    }
+
+    if ('IntersectionObserver' in window && !reducir) {
+        var obs = new IntersectionObserver(function (items) {
+            items.forEach(function (it) {
+                if (!it.isIntersecting) return;
+                var c = it.target;
+                c.classList.remove('oculto');
+                setTimeout(function () { c.style.transitionDelay = ''; }, 1000);
+                obs.unobserve(c);
+            });
+        }, { threshold: 0.15 });
+        tarjetas.forEach(function (c, i) {
+            c.classList.add('oculto');
+            c.style.transitionDelay = (i * 120) + 'ms';
+            obs.observe(c);
+        });
+    }
+});
+</script>
 
 <section class="comunidad" id="galeria">
     <div class="container">
@@ -545,7 +645,9 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="redes-duo">
             <article class="red-panel">
                 <div class="red-panel-top">
-                    <span class="red-panel-icono"><i class="bi bi-house-heart-fill"></i></span>
+                   <span class="medalla">
+                    <img th:src="@{/img/logo-iacym-independencia.png}" alt="Logo IACYM" onerror="this.style.display='none'">
+                         </span>
                     <div>
                         <h3>Iglesia Independencia</h3>
                         <p>Cultos, eventos y avisos de toda la congregación.</p>
@@ -565,7 +667,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <article class="red-panel">
                 <div class="red-panel-top">
-                    <span class="red-panel-icono"><i class="bi bi-lightning-charge-fill"></i></span>
+                
+                <span class="rayo" aria-hidden="true">
+                       <svg viewBox="0 0 64 64">
+                         <defs>
+            <linearGradient id="gRayo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#FFF6C8"/>
+                <stop offset=".5" stop-color="#FFC93C"/>
+                <stop offset="1" stop-color="#E8870E"/>
+            </linearGradient>
+            <filter id="brilloRayo" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="2.2" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+        </defs>
+        <path filter="url(#brilloRayo)" fill="url(#gRayo)" stroke="#FFF3B0" stroke-width="1" stroke-linejoin="round"
+              d="M37 4 L14 36 H29 L24 60 L50 26 H35 Z"/>
+           </svg>
+             </span>
+                   
                     <div>
                         <h3>Red Juvenil</h3>
                         <p>Reuniones, actividades y novedades de los jóvenes.</p>

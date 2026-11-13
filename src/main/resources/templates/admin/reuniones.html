@@ -1,49 +1,56 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head><th:block th:replace="~{fragments/layout :: cabeceraAdmin('Reuniones')}"></th:block></head>
-<body>
+<body class="adm">
 <header th:replace="~{fragments/layout :: menuAdmin}"></header>
-<main class="contenedor py-4">
-    <h1 class="h3">Reuniones</h1>
+<main class="adm-main">
+    <div class="adm-titulo"><h1>Reuniones</h1><p>Los horarios que se muestran en la página pública.</p></div>
 
-    <form th:action="@{/admin/reuniones}" th:object="${reunion}" method="post" class="row g-2 mb-4">
-        <div class="col-md-4"><input class="form-control" th:field="*{nombre}" placeholder="Nombre" required></div>
-        <div class="col-md-4"><input class="form-control" th:field="*{descripcion}" placeholder="Descripción"></div>
-        <div class="col-md-4"><input class="form-control" th:field="*{lugar}" placeholder="Lugar"></div>
-        <div class="col-md-3">
-            <select class="form-select" th:field="*{diaSemana}" required>
-                <option th:each="d : ${dias}" th:value="${d}"
-                        th:text="${d.getDisplayName(T(java.time.format.TextStyle).FULL, new java.util.Locale('es'))}"></option>
-            </select>
-        </div>
-        <div class="col-md-3"><input type="time" class="form-control" th:field="*{horaInicio}" required></div>
-        <div class="col-md-3"><input type="time" class="form-control" th:field="*{horaFin}"></div>
-        <div class="col-md-3 d-flex align-items-center gap-3">
-            <div class="form-check">
-                <input type="checkbox" class="form-check-input" th:field="*{activa}">
-                <label class="form-check-label" for="activa">Activa</label>
+    <section class="adm-card">
+        <h2><i class="bi bi-plus-circle-fill"></i> Nueva reunión</h2>
+        <form th:action="@{/admin/reuniones}" th:object="${reunion}" method="post" class="row g-3">
+            <div class="col-12 col-md-6"><label for="nombre">Nombre</label><input class="form-control" th:field="*{nombre}" required></div>
+            <div class="col-12 col-md-6"><label for="lugar">Lugar</label><input class="form-control" th:field="*{lugar}"></div>
+            <div class="col-12"><label for="descripcion">Descripción</label><input class="form-control" th:field="*{descripcion}"></div>
+            <div class="col-12 col-md-4">
+                <label for="diaSemana">Día</label>
+                <select class="form-select" th:field="*{diaSemana}" required>
+                    <option th:each="d : ${dias}" th:value="${d}"
+                            th:text="${d.getDisplayName(T(java.time.format.TextStyle).FULL, new java.util.Locale('es'))}"></option>
+                </select>
             </div>
-            <button class="btn btn-primary">Guardar</button>
-        </div>
-    </form>
+            <div class="col-6 col-md-4"><label for="horaInicio">Hora de inicio</label><input type="time" class="form-control" th:field="*{horaInicio}" required></div>
+            <div class="col-6 col-md-4"><label for="horaFin">Hora de fin</label><input type="time" class="form-control" th:field="*{horaFin}"></div>
+            <div class="col-12 col-md-6 d-flex align-items-center">
+                <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" role="switch" th:field="*{activa}">
+                    <label class="form-check-label" th:for="${#ids.prev('activa')}">Visible en la página</label>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 text-md-end"><button class="btn btn-primary btn-guardar px-4"><i class="bi bi-check-lg"></i> Guardar</button></div>
+        </form>
+    </section>
 
-    <table class="table table-striped align-middle">
-        <thead><tr><th>Nombre</th><th>Día</th><th>Hora</th><th>Activa</th><th></th></tr></thead>
-        <tbody>
-        <tr th:each="r : ${reuniones}">
-            <td th:text="${r.nombre}"></td>
-            <td th:text="${r.diaSemana.getDisplayName(T(java.time.format.TextStyle).FULL, new java.util.Locale('es'))}"></td>
-            <td th:text="${#temporals.format(r.horaInicio, 'HH:mm')}"></td>
-            <td th:text="${r.activa ? 'Sí' : 'No'}"></td>
-            <td>
-                <form th:action="@{/admin/reuniones/{id}/eliminar(id=${r.id})}" method="post"
-                      onsubmit="return confirm('¿Eliminar esta reunión?')">
-                    <button class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+    <section class="adm-card">
+        <h2><i class="bi bi-list-ul"></i> Reuniones registradas</h2>
+        <p class="vacio-adm" th:if="${#lists.isEmpty(reuniones)}">Aún no hay reuniones.</p>
+        <table class="tabla-adm" th:unless="${#lists.isEmpty(reuniones)}">
+            <thead><tr><th>Nombre</th><th>Día</th><th>Hora</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${reuniones}">
+                <td data-label="Nombre"><strong th:text="${r.nombre}"></strong></td>
+                <td data-label="Día" class="cap" th:text="${r.diaSemana.getDisplayName(T(java.time.format.TextStyle).FULL, new java.util.Locale('es'))}"></td>
+                <td data-label="Hora" th:text="${#temporals.format(r.horaInicio, 'HH:mm')}"></td>
+                <td data-label="Estado"><span class="pill" th:classappend="${r.activa} ? 'pill-ok' : 'pill-no'" th:text="${r.activa} ? 'Activa' : 'Inactiva'"></span></td>
+                <td class="accion">
+                    <form th:action="@{/admin/reuniones/{id}/eliminar(id=${r.id})}" method="post" onsubmit="return confirm('¿Eliminar esta reunión?')">
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
 </main>
 </body>
 </html>

@@ -11,7 +11,7 @@
 <!-- Cabecera pública -->
 <head th:fragment="cabecera(titulo)">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1200">
+    <meta name="viewport" content="width=1000">
     <title th:text="${titulo} + ' | IACYM Independencia'">IACYM Independencia</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,6 +64,13 @@
             </div>
         </div>
     </nav>
+        <script>
+    (function () {
+        function ajustar() { document.body.classList.toggle('scrolled', window.scrollY > 40); }
+        window.addEventListener('scroll', ajustar, { passive: true });
+        ajustar();
+    })();
+    </script>
 </header>
 
 <!-- Menú administrativo -->
@@ -126,11 +133,26 @@
         </div>
         <div>
             <h4 class="h6 text-white mb-3">Contacto</h4>
-            <ul class="pie-links pie-contacto">
-                <li><i class="bi bi-geo-alt"></i>Av. Los Olivos 456, Urb. El Rosario</li>
-                <li><i class="bi bi-whatsapp"></i></li>
-                <li><i class="bi bi-envelope"></i>iacymindependencia95@gmail.com</li>
-            </ul>
+           <ul class="pie-links pie-contacto">
+             <li>
+                <a href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Las+Guindas+102+Independencia+Lima" target="_blank" rel="noopener">
+            <i class="bi bi-geo-alt-fill"></i><span>Av. Las Guindas 102, Independencia</span>
+        </a>
+         </li>
+            <li>
+        <a href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20comunicarme%20con%20la%20iglesia." target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i><span>+51 963 109 749</span>
+        </a>
+    </li>
+    <li>
+        <a href="mailto:iacymindependencia95@gmail.com">
+            <i class="bi bi-envelope-fill"></i><span>iacymindependencia95@gmail.com</span>
+             </a>
+             </li>
+          </ul>
+         <a class="pie-wsp" href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20comunicarme%20con%20la%20iglesia." target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> Contáctanos por WhatsApp
+              </a>
         </div>
         <div>
             <h4 class="h6 text-white mb-3">Síguenos</h4>
@@ -152,6 +174,8 @@
         </div>
     </div>
 </footer>
-
+<a class="wsp-flotante" href="https://wa.me/51963109749?text=Hola%2C%20quisiera%20comunicarme%20con%20la%20iglesia." target="_blank" rel="noopener" aria-label="Contáctanos por WhatsApp">
+    <i class="bi bi-whatsapp"></i><span>Contáctanos</span>
+</a>
 </body>
 </html>

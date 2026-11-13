@@ -1,35 +1,49 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head><th:block th:replace="~{fragments/layout :: cabeceraAdmin('Panel')}"></th:block></head>
-<body>
+<body class="adm">
 <header th:replace="~{fragments/layout :: menuAdmin}"></header>
-<main class="contenedor py-4">
-    <h1>Panel</h1>
-    <div class="row g-3 mb-4">
-        <div class="col-md-4"><div class="tarjeta"><div class="numero" th:text="${totalReuniones}">0</div>Reuniones activas</div></div>
-        <div class="col-md-4"><div class="tarjeta"><div class="numero" th:text="${totalEventos}">0</div>Próximos eventos</div></div>
-        <div class="col-md-4"><div class="tarjeta"><div class="numero" th:text="${totalHermanos}">0</div>Hermanos registrados</div></div>
+<main class="adm-main">
+    <div class="adm-titulo"><h1>Panel</h1><p>Resumen de la iglesia.</p></div>
+
+    <div class="adm-stats">
+        <div class="stat"><i class="bi bi-calendar-week"></i><b th:text="${totalReuniones}">0</b><span>Reuniones activas</span></div>
+        <div class="stat"><i class="bi bi-calendar-event"></i><b th:text="${totalEventos}">0</b><span>Próximos eventos</span></div>
+        <div class="stat"><i class="bi bi-people"></i><b th:text="${totalHermanos}">0</b><span>Hermanos registrados</span></div>
     </div>
+
+    <div class="adm-atajos">
+        <a class="atajo" th:href="@{/admin/reuniones}"><i class="bi bi-calendar-week"></i>Reuniones</a>
+        <a class="atajo" th:href="@{/admin/eventos}"><i class="bi bi-calendar-event"></i>Eventos</a>
+        <a class="atajo" th:href="@{/admin/hermanos}"><i class="bi bi-people"></i>Hermanos</a>
+        <a class="atajo" th:href="@{/admin/destinatarios}"><i class="bi bi-envelope"></i>Destinatarios</a>
+        <a class="atajo" th:href="@{/admin/historial}"><i class="bi bi-clock-history"></i>Historial</a>
+    </div>
+
     <div class="row g-3">
-        <div class="col-md-6">
-            <h2 class="h5">Cumpleaños de los próximos 30 días</h2>
-            <p th:if="${#lists.isEmpty(cumpleanos)}" class="vacio">Sin cumpleaños próximos.</p>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between" th:each="c : ${cumpleanos}">
-                    <span th:text="${c.nombre}"></span>
-                    <span class="fecha" th:text="${#temporals.format(c.fecha, 'dd/MM')}"></span>
-                </li>
-            </ul>
+        <div class="col-12 col-lg-6">
+            <section class="adm-card h-100">
+                <h2><i class="bi bi-gift-fill"></i> Cumpleaños de los próximos 30 días</h2>
+                <p class="vacio-adm" th:if="${#lists.isEmpty(cumpleanos)}">Sin cumpleaños próximos.</p>
+                <ul class="lista-adm">
+                    <li th:each="c : ${cumpleanos}">
+                        <span th:text="${c.nombre}"></span>
+                        <span class="pill pill-azul" th:text="${#temporals.format(c.fecha, 'dd/MM')}"></span>
+                    </li>
+                </ul>
+            </section>
         </div>
-        <div class="col-md-6">
-            <h2 class="h5">Últimas notificaciones</h2>
-            <p th:if="${#lists.isEmpty(alertas)}" class="vacio">Aún no hay notificaciones.</p>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between" th:each="a : ${alertas}">
-                    <span th:text="${#temporals.format(a.fechaEnvio, 'dd/MM/yyyy HH:mm')}"></span>
-                    <span th:text="${a.estadoEnvio}"></span>
-                </li>
-            </ul>
+        <div class="col-12 col-lg-6">
+            <section class="adm-card h-100">
+                <h2><i class="bi bi-envelope-check-fill"></i> Últimas notificaciones</h2>
+                <p class="vacio-adm" th:if="${#lists.isEmpty(alertas)}">Aún no hay notificaciones.</p>
+                <ul class="lista-adm">
+                    <li th:each="a : ${alertas}">
+                        <span th:text="${#temporals.format(a.fechaEnvio, 'dd/MM/yyyy HH:mm')}"></span>
+                        <span class="pill" th:classappend="${a.estadoEnvio == 'ENVIADO'} ? 'pill-ok' : 'pill-err'" th:text="${a.estadoEnvio}"></span>
+                    </li>
+                </ul>
+            </section>
         </div>
     </div>
 </main>
